@@ -40,9 +40,6 @@ else:
     center_x = (top_left[0] + bottom_right[0])/2
     center_y = (top_left[1] + bottom_right[1])/2
 
-    center_x = center_x/autoclickerd.SCALE_PIXELS
-    center_y = center_y/autoclickerd.SCALE_PIXELS
-
-    print(center_x, center_y)
+    print("going to", center_x, center_y)
 
     os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
