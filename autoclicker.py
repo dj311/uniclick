@@ -5,16 +5,22 @@ import sys
 
 
 if __name__=="__main__":
-    f = open(autoclickerd.SCREEN_JSON, "r")
-    word_to_box = json.load(f)
-    f.close()
-
     num_args = len(sys.argv) - 1
     if num_args == 0:
+        word_to_box = autoclickerd.ocr_screen()
         print("\n".join(word_to_box.keys()))
+
+        f = open(autoclickerd.SCREEN_JSON, "w")
+        json.dump(word_to_box, f)
+        f.close()
+
         quit(1)
 
     elif num_args == 1:
+        f = open(autoclickerd.SCREEN_JSON, "r")
+        word_to_box = json.load(f)
+        f.close()
+
         word = sys.argv[1]
         box = word_to_box.get(word)
         if box is None:
