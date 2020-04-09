@@ -1,63 +1,48 @@
-import autopy
-import mouse
-import keyboard
-import pyocr
-import pyocr.builders
-import pygtrie
-import time
+import os
+import json
+import autoclickerd
 
-from PIL import Image
-from multiprocessing import Process, SimpleQueue
+f = open(autoclickerd.SCREEN_JSON, "r")
+word_to_box = json.load(f)
+f.close()
 
-word_to_box = pygtrie.Trie(dict())
+search_term = ""
+stop = False
+while len(word_to_box) > 1 and not stop:
+    search_term += input("search: " + search_term)
+    if search_term.endswith("$"):
+        stop = True
+        search_term = search_term.rstrip("$")
 
-def ocr_screen(q):
-    tools = pyocr.get_available_tools()
-    tool = tools[1]  # libtesseract
+    if stop:
+        word_to_box = {
+            word: box for word, box in word_to_box.items()
+            if word == search_term
+        }
+        first, *rest = list(word_to_box.items())
+        word_to_box = dict([first])
 
-    langs = tool.get_available_languages()
-    lang = langs[0]
+    else:
+        word_to_box = {
+            word: box for word, box in word_to_box.items()
+            if word.startswith(search_term)
+        }
 
-    while True:
-        autopy.bitmap.capture_screen().save("screenshot.png")
-        screen = Image.open("screenshot.png")
+    print("results: " + ", ".join(word_to_box.keys()))
 
-        word_boxes = tool.image_to_string(
-            screen,
-            lang=lang,
-            builder=pyocr.builders.WordBoxBuilder(),
-        )
+if len(word_to_box) == 0:
+    print("couldn't find matching text")
 
-        word_to_box = {word_box.content.lower(): word_box.position for word_box in word_boxes}
-        word_to_box = pygtrie.Trie(word_to_box)
+else:
+    box, *rest = list(word_to_box.values())
+    top_left, bottom_right = box
 
-        q.put(word_to_box)
-        q.get()
-        time.sleep(1)
+    center_x = (top_left[0] + bottom_right[0])/2
+    center_y = (top_left[1] + bottom_right[1])/2
 
+    center_x = center_x/autoclickerd.SCALE_PIXELS
+    center_y = center_y/autoclickerd.SCALE_PIXELS
 
-ocr_outputs = SimpleQueue()
-ocr_daemon = Process(target=ocr_screen, args=(ocr_outputs,))
-ocr_daemon.daemon = True
-ocr_daemon.start()
+    print(center_x, center_y)
 
-def search():
-    for _ in range(10):
-        print(keyboard.read_key())
-
-    # search_term = ""
-    # boxes = list(word_to_box.itervalues(''))
-    # while len(boxes) > 1:
-    #     search_term += input("search: " + search_term)
-    #     boxes = list(word_to_box.itervalues(search_term.lower()))
-    #     print("results: " + ", ".join([''.join(tup) for tup in word_to_box.iterkeys(search_term)]))
-
-    # [box] = boxes
-    # top_left, bottom_right = box
-    # center = (top_left[0] + bottom_right[0])/2, (top_left[1] + bottom_right[1])/2
-
-    # autopy.mouse.move(center[0]/autopy.screen.scale(), center[1]/autopy.screen.scale())
-    # autopy.mouse.click(autopy.mouse.Button.LEFT)
-
-keyboard.add_hotkey('ctrl+shift+a', search)
-keyboard.wait()
+    os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
