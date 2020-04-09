@@ -1,45 +1,31 @@
 import os
 import json
 import autoclickerd
+import sys
 
-f = open(autoclickerd.SCREEN_JSON, "r")
-word_to_box = json.load(f)
-f.close()
 
-search_term = ""
-stop = False
-while len(word_to_box) > 1 and not stop:
-    search_term += input("search: " + search_term)
-    if search_term.endswith("$"):
-        stop = True
-        search_term = search_term.rstrip("$")
+if __name__=="__main__":
+    f = open(autoclickerd.SCREEN_JSON, "r")
+    word_to_box = json.load(f)
+    f.close()
 
-    if stop:
-        word_to_box = {
-            word: box for word, box in word_to_box.items()
-            if word == search_term
-        }
-        first, *rest = list(word_to_box.items())
-        word_to_box = dict([first])
+    num_args = len(sys.argv) - 1
+    if num_args == 0:
+        print("\n".join(word_to_box.keys()))
+        quit(1)
 
-    else:
-        word_to_box = {
-            word: box for word, box in word_to_box.items()
-            if word.startswith(search_term)
-        }
+    elif num_args == 1:
+        word = sys.argv[1]
+        box = word_to_box.get(word)
+        if box is None:
+            print("couldn't find requested box")
 
-    print("results: " + ", ".join(word_to_box.keys()))
+        top_left, bottom_right = box
 
-if len(word_to_box) == 0:
-    print("couldn't find matching text")
+        center_x = (top_left[0] + bottom_right[0])/2
+        center_y = (top_left[1] + bottom_right[1])/2
 
-else:
-    box, *rest = list(word_to_box.values())
-    top_left, bottom_right = box
+        print("going to", center_x, center_y)
 
-    center_x = (top_left[0] + bottom_right[0])/2
-    center_y = (top_left[1] + bottom_right[1])/2
+        os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
 
-    print("going to", center_x, center_y)
-
-    os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
