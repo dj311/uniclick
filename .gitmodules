@@ -1,3 +1,0 @@
-[submodule "tessdata"]
-	path = tessdata
-	url = https://github.com/tesseract-ocr/tessdata.git
