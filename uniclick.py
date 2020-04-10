@@ -14,7 +14,8 @@ commands:
                    useful.
            list :: output a list of all words on screen.
     goto <word> :: move the mouse to <word> on screen.
-           help :: sohw this message.
+             ui :: list and goto word via an overlay ui.
+           help :: show this message.
 
 requirements:
   - tesseract
@@ -26,13 +27,18 @@ requirements:
   - python-daemon
 
 examples:
-  1. configure i3 to scan then search when $mod+m is pressed:
+  1. scan then use overlay ui for picking
+     .config/i3/config:
+        bindsym $mod+c exec uniclick update \
+                | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
+                && uniclick ui
+  2. configure i3 to scan then search when $mod+m is pressed:
      .config/i3/config:
          bindsym $mod+m exec uniclick update \
             | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
             && uniclick goto "$(uniclick list | rofi -dmenu -p 'uniclick' -i)"
 
-  2. constantly scan screen in background then search cached version on demand:
+  3. constantly scan screen in background then search cached version on demand:
      .xsession:
          uniclick update --daemon &&
      .config/i3/config:
@@ -169,6 +175,8 @@ if __name__=="__main__":
             e = w.display.next_event()
 
             if e.type == X.KeyRelease:
+                w.draw(word_to_box.items())  # undraw current state
+
                 keysym = w.display.keycode_to_keysym(e.detail, 0)
                 string = XK.keysym_to_string(keysym)
 
@@ -189,10 +197,10 @@ if __name__=="__main__":
                     if clean_word(word).startswith(clean_word(search_term))
                 }
 
-            w.draw(word_to_box.items())
-            w.display.sync()
+                w.draw(word_to_box.items())
+                w.display.sync()
 
-        w.draw(word_to_box.items())
+        w.window.unmap()
         w.display.sync()
 
         matches = list(word_to_box.values())

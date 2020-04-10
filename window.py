@@ -4,11 +4,12 @@ class Window:
     def __init__(self, display):
         self.display = display
         self.screen = self.display.screen()
-        self.window = self.screen.root
+        self.root = self.screen.root
+        self.window = self.screen.root.composite_get_overlay_window()._data['overlay_window']
+        self.window.unmap()
+        self.display.sync()
 
-        cursor = X.NONE
-
-        self.window.grab_keyboard(
+        self.root.grab_keyboard(
             1,
             X.GrabModeAsync,
             X.GrabModeAsync,
@@ -21,11 +22,12 @@ class Window:
 
         self.gc = self.window.create_gc(
             foreground=self.xor_color,
-            graphics_exposures=False,
+            graphics_exposures=True,
             function=X.GXxor,
             subwindow_mode=X.IncludeInferiors,
         )
 
+        self.window.map()
         self.window.change_attributes(event_mask=X.ExposureMask)
 
     def draw(self, word_boxes):
