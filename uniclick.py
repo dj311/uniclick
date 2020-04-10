@@ -161,6 +161,13 @@ if __name__=="__main__":
         print(title + usage)
 
     elif command == "ui":
+        if len(args) > 0 and args[0] == "--click":
+            clicks = 1
+        elif len(args) > 0 and args[0] == "--double-click":
+            clicks = 2
+        else:
+            clicks = 0
+
         f = open(SCREEN_JSON, "r")
         word_to_box = json.load(f)
         f.close()
@@ -216,5 +223,8 @@ if __name__=="__main__":
         print("going to", center_x, center_y)
 
         os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
+        if clicks > 0:
+            print(f"xdotool click --repeat {clicks} 1")
+            os.system(f"xdotool click --repeat {clicks} 1")
 
 
