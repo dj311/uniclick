@@ -57,6 +57,8 @@ from Xlib import X, XK
 from PIL import Image, ImageEnhance
 from daemon import pidfile
 
+ALPHABET = "qwertyuiopasdfghjklzxcvbnm1234567890"
+
 CACHE_DIR = os.path.join(os.getenv("HOME"), ".cache")
 SCREEN_PNG = os.path.join(CACHE_DIR, "uniclick-screen.png")
 SCREEN_JSON = os.path.join(CACHE_DIR, "uniclick-screen.json")
@@ -67,6 +69,9 @@ tool = tools[0]
 
 langs = tool.get_available_languages()
 lang = langs[0]
+
+def clean_word(word):
+    return ''.join(c for c in word.lower() if c in ALPHABET)
 
 def ocr_screen():
     os.system(f"scrot -q 100 --overwrite {SCREEN_PNG}.new.png")
@@ -155,16 +160,15 @@ if __name__=="__main__":
         f.close()
 
         w = window.Window(window.display.Display())
-        w.draw(list(word_to_box.values()))
+        w.draw(word_to_box.items())
+        w.display.sync()
 
         search_term = ""
         found = False
-        while len(word_to_box) > 1 and not found:
+        while not found:
             e = w.display.next_event()
 
             if e.type == X.KeyRelease:
-                w.draw(list(word_to_box.values()))
-
                 keysym = w.display.keycode_to_keysym(e.detail, 0)
                 string = XK.keysym_to_string(keysym)
 
@@ -174,14 +178,22 @@ if __name__=="__main__":
                 elif keysym == XK.XK_Escape:
                     raise SystemExit
 
-                elif string in "qwertyuiopasdfghjklzxcvbnm,1234567890-=_+[];'#,./{}:@~<>?|\`¬!\"£$%^&*() ":
+                elif string in ALPHABET:
                     search_term += string
 
-                word_to_box = {word: box for word, box in word_to_box.items() if word.lower().startswith(search_term)}
-                found = any([word == search_term for word in word_to_box.keys()])
+                elif keysym == XK.XK_Return:
+                    found = True
 
+                word_to_box = {
+                    word: box for word, box in word_to_box.items()
+                    if clean_word(word).startswith(clean_word(search_term))
+                }
 
-                w.draw(list(word_to_box.values()))
+            w.draw(word_to_box.items())
+            w.display.sync()
+
+        w.draw(word_to_box.items())
+        w.display.sync()
 
         matches = list(word_to_box.values())
         if len(matches) < 1:
