@@ -8,24 +8,13 @@ title = """
 
 """
 usage = """
-uniclick [command] [args]
-
 commands:
-  update :: take and ocr a screenshot, save results to the cache. the
-            `list` and `goto` commands need an up-to-date cache to be
-            useful.
-
-            args:
-               --forever :: update the cache every 3 seconds forever.
-                  --once :: update the cache once then exit
-              --progress :: show a "loading" message on screen during the ocr.
-
-    list :: output a list of all words on screen.
-
-    goto :: given a word, move the mouse to that word.
-
-            args:
-               [word] :: word on screen to move to
+         update :: take and ocr a screenshot, save results to the cache. the
+                   `list` and `goto` commands need an up-to-date cache to be
+                   useful.
+           list :: output a list of all words on screen.
+    goto <word> :: move the mouse to <word> on screen.
+           help :: sohw this message.
 
 """
 __doc__ = title + usage
