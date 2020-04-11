@@ -5,8 +5,7 @@ screenshot of your desktop, runs optical character recognition (OCR)
 on it, then displays narrowing UI that allows you to select a word. Once
 your target word is selected, you cursor will be moved to its center.
 uniclick will click or double-click on request. It's similar in spirit to
-[keynav](https://www.semicomplete.com/projects/keynav/). Though using OCR
-means uniclick is much less reliable.
+[keynav](https://www.semicomplete.com/projects/keynav/).
 
 Here's a demo:
 
@@ -24,12 +23,15 @@ the center of that word.
 
 If you want to give up/cancel, press `<esc>` at any time.
 
-OCR is quite hard, so there will be errors. If you've typed `unicl` and
-the word `uniclick` stops being highlighted, it's probably because the `l`
-has been misread. Try pressing `<backspace>` then `1` and seeing if it
-stays highlighted.
 
-If you discover an OCR engine which works particuarly well for this use case,
+*Note:* because uniclick uses OCR to find the text, it can take a little
+while to startup (approx. 5 seconds on my machine). This is it's primary
+drawback. Also, whilst tesseract tries it's best, there will be occasionnal
+errors. For example, if you've typed `unicl` and the word `uniclick` stops being
+highlighted, it's probably because the `l` has been misread. Try pressing
+`<backspace>` then `1` and seeing if it stays highlighted.
+
+If you discover a method to recude startup time to,
 please [let me know](https://daniel.wilshirejones.com/contact.html).
 
 
@@ -56,40 +58,24 @@ This could do with a proper installation method, but for now I do the following:
      #!/usr/bin/env bash
      <path-to-uniclick-repo>/.venv/bin/python <path-to-uniclick-repo>/uniclick.py "$@"
      ```
+     
+### Usage
+Just run `python3 uniclick.py`, or `uniclick` if you followed the steps above. Add `--click` or `--double-click` if you want it to click at the end.
 
-### Examples
-Example setups for i3:
-  1. Scan screen then use overlay ui for picking (zenity is used for a
-     progress indicator, but thats optional).
-        ```
-        bindsym $mod+c exec uniclick update \\
-            | zenity --progress --auto-close --auto-kill --pulsate \\
-                     --text "uniclick loading..." \\
-            && uniclick ui
-        ```
-
-  2. Scan screen then use overlay ui for picking. uniclick will
-     continue to scan in the background, allowing quick response times
-     for future invocations.
-        ```
-        bindsym $mod+c exec uniclick update --daemon && uniclick ui
-        ```
-
-There are tradeoffs between these options:
-  - Running the update as a daemon means it'll be responsive, but
-    you'll waste a lot compute and there's a high likelihood that the
-    cached data is out of date.
-  - Running the update on demand shouldn't ever give out of date
-    results, but will be slow (each update takes around 5 seconds on
-    my machine).
-    
+I have it bound to `super+c` in my i3 config, like this:
+```
+bindsym $mod+c exec uniclick
+bindsym $mod+control+c exec uniclick --click
+bindsym $mod+shift+c exec uniclick --double-click
+```
 
 ### Enhancements
   a. Narrowing can take advantage of common OCR errors. E.g searches for `unicl` could
     include `unic1ick`.
-  b. Try different metrics for the search algorithm. Maybe some kinf od edit distance
+  b. Try different metrics for the search algorithm. Maybe some kind of edit distance
     for ranking. That could even take into account OCR errors as in a.
-  c. ???
+  c. Try to speed up OCR.
+  d. ???
 
 
 ### Credits:
