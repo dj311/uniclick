@@ -1,26 +1,27 @@
 title = """
-                              _        __ _        __
-               __  __ ____   (_)_____ / /(_)_____ / /__
-              / / / // __ \ / // ___// // // ___// //_/
-             / /_/ // / / // // /__ / // // /__ / ,<
-             \__,_//_/ /_//_/ \___//_//_/ \___//_/|_|
+                    _        __ _        __
+     __  __ ____   (_)_____ / /(_)_____ / /__
+    / / / // __ \ / // ___// // // ___// //_/
+   / /_/ // / / // // /__ / // // /__ / ,<
+   \__,_//_/ /_//_/ \___//_//_/ \___//_/|_|
 
 """
 usage = """
 usage: uniclick [--click | --double-click | --help]
 
-uniclick allows you to click on any text using just your keyboard. when run, it will:
+uniclick allows you to click on any text using just your keyboard.
+when run, it will:
   1. take a screenshot of your desktop
   2. run optical character recognition (OCR) on it
   3. displays narrowing UI that allows you to select a word
   4. once your target word is selected, you cursor will be moved to its center.
 
-if --click or --double-click are given, it will also click the left mouse button the
-expected number of times.
+if --click or --double-click are given, it will also click the left mouse button
+the expected number of times.
 """
 notes = """
-uniclick expects to be inside an x11 session and requires a compositor running (tested
-with compton).
+uniclick expects to be inside an x11 session and requires a compositor running
+(tested with compton).
 
 system requirements:
   - tesseract
@@ -31,11 +32,13 @@ system requirements:
 python requirements are in requirements.txt.
 
 credits:
-  - https://gist.github.com/initbrain/6628609 was vital for me getting the overlay
-    window to work.
-  - https://stackoverflow.com/questions/14200512#14269915 pointed me towards using
-    the composite overlay window which made the ui reliable enough to actually be used.
-  - tesseract, pyocr, xdotool, pillow, python-xlib, etc for doing the hard work..
+  - https://gist.github.com/initbrain/6628609 was vital for me getting the
+    overlay window to work.
+  - https://stackoverflow.com/questions/14200512#14269915 pointed me towards
+    using the composite overlay window which made the ui reliable enough to
+    actually be used.
+  - tesseract, pyocr, xdotool, pillow, python-xlib, etc for doing the hard
+    work..
 
 """
 __doc__ = title + usage + notes
@@ -254,5 +257,4 @@ if __name__ == "__main__":
 
     subprocess.run(["xdotool", "mousemove", "--sync", str(center_x), str(center_y)])
     if clicks > 0:
-        print(f"xdotool click --repeat {clicks} 1")
         subprocess.run(["xdotool", "click", "--repeat", str(clicks), "1"])
