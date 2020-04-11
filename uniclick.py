@@ -1,29 +1,29 @@
 title = """
-
-                     _        __ _        __
-      __  __ ____   (_)_____ / /(_)_____ / /__
-     / / / // __ \ / // ___// // // ___// //_/
-    / /_/ // / / // // /__ / // // /__ / ,<
-    \__,_//_/ /_//_/ \___//_//_/ \___//_/|_|
+                                  _        __ _        __
+                   __  __ ____   (_)_____ / /(_)_____ / /__
+                  / / / // __ \ / // ___// // // ___// //_/
+                 / /_/ // / / // // /__ / // // /__ / ,<
+                 \__,_//_/ /_//_/ \___//_//_/ \___//_/|_|
 
 """
 usage = """
+usage: uniclick (update | ui | help) [args]
+
 commands:
-         update :: take and ocr a screenshot, save results to the cache. the
-                   `list` and `goto` commands need an up-to-date cache to be
-                   useful.
-           list :: output a list of all words on screen.
-    goto <word> :: move the mouse to <word> on screen.
-             ui :: list and goto word via an overlay ui. results are narrowed
-                   by typing letters (narrowing is case insensitive and only
-                   considers 'qwertyuiopasdfghjklzxcvbnm1234567890'.
-                   - <tab> cycles between results when you have 5 or less.
-                     unfortunately the cycling order is a little stochastic.
-                   - <backspace> untypes letters (as you'd expect).
-                   - <enter> completes the search.
-                   the default action is to move the mouse. the argument --click
-                   will click after moving and --double-click will click twice.
-           help :: show this message.
+  update :: screenshot then ocr the screen, saving results to the cache. adding
+            `--daemon` will run this repeatedly in the background, once every 3
+            seconds.
+
+      ui :: list and goto word via an overlay ui. results are narrowed by typing letters
+            (case insensitive and only considers 'qwertyuiopasdfghjklzxcvbnm1234567890').
+              - <tab> cycles between results when you have 5 or less.  unfortunately the
+                cycling order is a little stochastic.
+              - <backspace> untypes letters (as you'd expect).
+              - <enter> completes the search. the default action is to move the
+                mouse. adding --click or --double-click will do click the left mouse
+                button the expected number of times after moving.
+
+    help :: show this message.
 
 system requirements:
   - tesseract
@@ -34,28 +34,20 @@ system requirements:
 python requirements are in requirements.txt.
 
 example setups for i3:
-
   1. scan then use overlay ui for picking
-        bindsym $mod+c exec uniclick update \
-            | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
+        bindsym $mod+c exec uniclick update \\
+            | zenity --progress --auto-close --auto-kill --pulsate \\
+                     --text "uniclick loading..." \\
             && uniclick ui
 
-  2. configure i3 to scan then search when $mod+m is pressed:
-         bindsym $mod+m exec uniclick update \
-            | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
-            && uniclick goto "$(uniclick list | rofi -dmenu -p 'uniclick' -i)"
+  2. start a daemon which scans the screen every 3 seconds
+        bindsym $mod+c exec uniclick update --daemon && uniclick ui
 
-  3. constantly scan screen in background then search cached version on demand:
-         bindsym $mod+m exec uniclick update --daemon \
-            && uniclick goto "$(uniclick list | rofi -dmenu -p 'uniclick' -i)"
-
-there are tradeoffs between the different options:
-  - running `uniclick update` as a daemon means that it's be responsive, but you'll waste a lot compute
-and there's a high likelihood of the cached data being out of date.
-  - running `uniclick update` on demand shouldn't ever give out of
-    date results, but will be slow (approx 5 secs on my machine).
-  - the overlay ui is considerably better, but can be buggy.
-
+there are tradeoffs between these options:
+  - running the update as a daemon means that it's be responsive, but you'll waste a lot
+    compute and there's a high likelihood of the cached data being out of date.
+  - running the update on demand shouldn't ever give out of date results, but will be
+    slow (approx 5 secs on my machine).
 
 """
 __doc__ = title + usage
