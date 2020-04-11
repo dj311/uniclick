@@ -43,6 +43,18 @@ System requirements:
 
 Python requirements are in requirements.txt.
 
+### Setup
+This could do with a proper installation method, but for now I do the following:
+  1. Ensure the system requirements are installed (via `apt` for me).
+  2. Clone the repo: `$ git clone https://github.com/dj311/uniclick.git && cd uniclick`.
+  3. Make and enter virtual env: `$ python3 -m venv .venv && source .venv/bin/activate`.
+  4. Install Python dependencies `$ pip install -r requirements.txt`.
+  5. Make a wrapper script `$ touch ~/.local/bin/uniclick && chmod u+x ~/.local/bin/uniclick` with something like this inside:
+     ```
+     #!/usr/bin/env bash
+     <path-to-uniclick-repo>/.venv/bin/python <path-to-uniclick-repo>/uniclick.py "$@"
+     ```
+
 ### Examples
 Example setups for i3:
   1. Scan screen then use overlay ui for picking (zenity is used for a
