@@ -51,6 +51,13 @@ there are tradeoffs between these options:
   - running the update on demand shouldn't ever give out of date results, but will be
     slow (approx 5 secs on my machine).
 
+credits:
+  - https://gist.github.com/initbrain/6628609 was vital for me getting the overlay
+    window to work.
+  - https://stackoverflow.com/questions/14200512#14269915 pointed me towards using
+    the composite overlay window which made the ui reliable enough to actually be used.
+  - tesseract, pyocr, xdotool, pillow, python-xlib, etc for doing the hard work..
+
 """
 __doc__ = title + usage
 
