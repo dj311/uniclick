@@ -43,7 +43,6 @@ credits:
 """
 __doc__ = title + usage + notes
 
-import daemon
 import json
 import os
 import pyocr
@@ -54,13 +53,11 @@ import subprocess
 
 from Xlib import X, XK, display
 from PIL import Image, ImageEnhance
-from daemon import pidfile
 
 ALPHABET = "qwertyuiopasdfghjklzxcvbnm1234567890"
 
 CACHE_DIR = os.path.join(os.getenv("HOME"), ".cache")
 SCREEN_PNG = os.path.join(CACHE_DIR, "uniclick-screen.png")
-DAEMON_PID = os.path.join(CACHE_DIR, "uniclick-daemon.pid")
 
 tools = pyocr.get_available_tools()
 tool = tools[0]
