@@ -20,7 +20,7 @@ class Window:
 
         self.gc = self.window.create_gc(
             foreground=self.xor_color,
-            graphics_exposures=True,
+            graphics_exposures=False,
             function=X.GXxor,
             subwindow_mode=X.IncludeInferiors,
         )
