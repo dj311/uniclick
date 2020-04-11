@@ -4,7 +4,9 @@ Click on any text using just your keyboard. `uniclick` takes a
 screenshot of your desktop, runs optical character recognition (OCR)
 on it, then displays narrowing UI that allows you to select a word. Once
 your target word is selected, you cursor will be moved to its center.
-uniclick will click or double-click on request.
+uniclick will click or double-click on request. It's similar in spirit to
+(keynav)[https://www.semicomplete.com/projects/keynav/]. Though using OCR
+means uniclick is much less reliable.
 
 Here's a demo:
 
@@ -80,6 +82,14 @@ There are tradeoffs between these options:
   - Running the update on demand shouldn't ever give out of date
     results, but will be slow (each update takes around 5 seconds on
     my machine).
+    
+
+### Enhancements
+  a. Narrowing can take advantage of common OCR errors. E.g searches for `unicl` could
+    include `unic1ick`.
+  b. Try different metrics for the search algorithm. Maybe some kinf od edit distance
+    for ranking. That could even take into account OCR errors as in a.
+  c. ???
 
 
 ### Credits:
