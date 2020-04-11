@@ -7,23 +7,20 @@ title = """
 
 """
 usage = """
-usage: uniclick (update | ui | help) [args]
+usage: uniclick [--click | --double-click | --help]
 
-commands:
-  update :: screenshot then ocr the screen, saving results to the cache. adding
-            `--daemon` will run this repeatedly in the background, once every 3
-            seconds.
+uniclick allows you to click on any text using just your keyboard. when run, it will:
+  1. take a screenshot of your desktop
+  2. run optical character recognition (OCR) on it
+  3. displays narrowing UI that allows you to select a word
+  4. once your target word is selected, you cursor will be moved to its center.
 
-      ui :: list and goto word via an overlay ui. results are narrowed by typing letters
-            (case insensitive and only considers 'qwertyuiopasdfghjklzxcvbnm1234567890').
-              - <tab> cycles between results when you have 5 or less.  unfortunately the
-                cycling order is a little stochastic.
-              - <backspace> untypes letters (as you'd expect).
-              - <enter> completes the search. the default action is to move the
-                mouse. adding --click or --double-click will do click the left mouse
-                button the expected number of times after moving.
-
-    help :: show this message.
+if --click or --double-click are given, it will also click the left mouse button the
+expected number of times.
+"""
+notes = """
+uniclick expects to be inside an x11 session and requires a compositor running (tested
+with compton).
 
 system requirements:
   - tesseract
@@ -31,25 +28,7 @@ system requirements:
   - scrot
   - python3
 
-it expects to be inside an x11 session with a compositor running (tested with compton).
-
 python requirements are in requirements.txt.
-
-example setups for i3:
-  1. scan then use overlay ui for picking
-        bindsym $mod+c exec uniclick update \\
-            | zenity --progress --auto-close --auto-kill --pulsate \\
-                     --text "uniclick loading..." \\
-            && uniclick ui
-
-  2. start a daemon which scans the screen every 3 seconds
-        bindsym $mod+c exec uniclick update --daemon && uniclick ui
-
-there are tradeoffs between these options:
-  - running the update as a daemon means that it's be responsive, but you'll waste a lot
-    compute and there's a high likelihood of the cached data being out of date.
-  - running the update on demand shouldn't ever give out of date results, but will be
-    slow (approx 5 secs on my machine).
 
 credits:
   - https://gist.github.com/initbrain/6628609 was vital for me getting the overlay
@@ -59,7 +38,7 @@ credits:
   - tesseract, pyocr, xdotool, pillow, python-xlib, etc for doing the hard work..
 
 """
-__doc__ = title + usage
+__doc__ = title + usage + notes
 
 import daemon
 import json
@@ -78,7 +57,6 @@ ALPHABET = "qwertyuiopasdfghjklzxcvbnm1234567890"
 
 CACHE_DIR = os.path.join(os.getenv("HOME"), ".cache")
 SCREEN_PNG = os.path.join(CACHE_DIR, "uniclick-screen.png")
-SCREEN_JSON = os.path.join(CACHE_DIR, "uniclick-screen.json")
 DAEMON_PID = os.path.join(CACHE_DIR, "uniclick-daemon.pid")
 
 tools = pyocr.get_available_tools()
@@ -91,28 +69,18 @@ lang = langs[0]
 def clean_word(word):
     return "".join(c for c in word.lower() if c in ALPHABET)
 
+def get_screen():
+    subprocess.run(["scrot", "-q", "100", "--overwrite", SCREEN_PNG])
+    screen = Image.open(SCREEN_PNG).convert("L")
+    screen = ImageEnhance.Contrast(screen).enhance(1.5)
+    return screen
 
-def ocr_screen():
-    subprocess.run(["scrot", "-q", "100", "--overwrite", f"{SCREEN_PNG}.new.png"])
 
-    old_screen = Image.open(SCREEN_PNG).convert("L")
-    new_screen = Image.open(SCREEN_PNG + ".new.png").convert("L")
-    screen_changed = old_screen.tobytes() != new_screen.tobytes()
-
-    if screen_changed:
-        subprocess.run(["mv", f"{SCREEN_PNG}.new.png", SCREEN_PNG])
-        screen = ImageEnhance.Contrast(new_screen).enhance(1.5)
-
-        word_boxes = tool.image_to_string(
-            screen, lang=lang, builder=pyocr.builders.WordBoxBuilder(),
-        )
-        word_boxes = [(word_box.content, word_box.position) for word_box in word_boxes]
-
-    else:
-        print("screen hasn't changed")
-        f = open(SCREEN_JSON, "r")
-        word_boxes = json.load(f)
-        f.close()
+def ocr_screen(screen):
+    word_boxes = tool.image_to_string(
+        screen, lang=lang, builder=pyocr.builders.WordBoxBuilder(),
+    )
+    word_boxes = [(word_box.content, word_box.position) for word_box in word_boxes]
 
     return word_boxes
 
@@ -142,25 +110,38 @@ class Overlay:
         self.window.change_attributes(event_mask=X.ExposureMask)
         self.display.sync()
 
+    def draw_message(self, msg):
+        win_geo = self.window.get_geometry()._data
 
-    def draw_no_results_msg(self):
-        geo = self.window.get_geometry()._data
-        center_x, center_y = int(geo['x'] + geo['width']/2), int(geo['y'] + geo['height']/2)
+        win_center_x = int(win_geo['x'] + win_geo['width']/2)
+        win_center_y = int(win_geo['y'] + win_geo['height']/2)
 
-        width, height = 600, 18
-        msg_x, msg_y = int(center_x - width/2), int(center_y - height/2)
+        msg_width = len(msg)*6
+        msg_height = 10
 
-        self.window.fill_rectangle(self.gc, msg_x, msg_y, width, height)
+        msg_x = int(win_center_x - msg_width/2)
+        msg_y = int(win_center_y - msg_height/2)
+
+        border_x = 5
+        border_y = 4
+
+        self.window.fill_rectangle(
+            self.gc,
+            msg_x-border_x,
+            msg_y-border_y,
+            msg_width+2*border_x,
+            msg_height+2*border_y,
+        )
         self.window.draw_text(
             self.gc,
-            msg_x + 5,
-            msg_y + 13,
-            "uniclick: Search term produced no results. Press Backspace to remove characters or Escape to quit."
+            msg_x,
+            msg_y+msg_height,
+            msg,
         )
 
     def draw(self, word_boxes, selection):
         if len(word_boxes) == 0:
-            self.draw_loading_msg()
+            self.draw_message("uniclick: Search term produced no results. Press Backspace to remove characters or Escape to quit.")
             return
 
         index = 0
@@ -182,115 +163,96 @@ class Overlay:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) <= 1:
-        command, *args = "help", []
-    else:
-        command, *args = sys.argv[1:]
+    num_args = len(sys.argv)
 
-    if command == "update" and args == ["--daemon"]:
-        with daemon.DaemonContext(pidfile=pidfile.TimeoutPIDLockFile(DAEMON_PID)):
-            while True:
-                word_boxes = ocr_screen()
-
-                f = open(SCREEN_JSON, "w")
-                json.dump(word_boxes, f)
-                f.close()
-
-                time.sleep(3)
-
-    elif command == "update" and args == []:
-        word_boxes = ocr_screen()
-
-        f = open(SCREEN_JSON, "w")
-        json.dump(word_boxes, f)
-        f.close()
-
-        quit(0)
-
-    elif command == "ui":
-        if len(args) > 0 and args[0] == "--click":
-            clicks = 1
-        elif len(args) > 0 and args[0] == "--double-click":
-            clicks = 2
-        else:
-            clicks = 0
-
-        f = open(SCREEN_JSON, "r")
-        word_boxes = json.load(f)
-        f.close()
-
-        w = Overlay(display.Display())
-        w.draw(word_boxes, None)
-        w.display.sync()
-
-        filtered_boxes = word_boxes.copy()
-        selection = None
-        search_term = ""
-        found = False
-        while not found:
-            e = w.display.next_event()
-
-            if e.type == X.KeyRelease:
-                w.draw(filtered_boxes, selection)  # undraw current state
-
-                keysym = w.display.keycode_to_keysym(e.detail, 0)
-                string = XK.keysym_to_string(keysym)
-
-                if keysym == XK.XK_BackSpace and len(search_term) >= 1:
-                    search_term = search_term[0:-1]
-
-                elif keysym == XK.XK_Escape:
-                    raise SystemExit
-
-                elif string is not None and string in ALPHABET:
-                    search_term += string
-
-                elif selection is not None and keysym == XK.XK_Return:
-                    found = True
-
-                elif keysym == XK.XK_Tab:
-                    if selection is not None:
-                        selection += 1
-
-                filtered_boxes = [
-                    (word, box) for word, box in word_boxes
-                    if clean_word(word).startswith(clean_word(search_term))
-                ]
-
-                num_boxes = len(filtered_boxes)
-                num_unique_words = len({clean_word(word) for word, box in filtered_boxes})
-
-                # enable <tab> selection once we have less than 5 results
-                if selection is None and num_unique_words <= 5:
-                    selection = 0
-                elif selection is not None and num_unique_words > 5:
-                    selection = None
-
-                # wrap the selection pointer
-                if selection is not None and selection >= num_boxes:
-                    selection = 0
-
-                w.draw(filtered_boxes, selection)
-                w.display.sync()
-
-        w.window.unmap()
-        w.display.sync()
-
-        if len(filtered_boxes) < 1:
-            print("couldn't find requested box")
-            exit()
-
-        word, box = filtered_boxes[selection]
-        top_left, bottom_right = box
-
-        center_x = (top_left[0] + bottom_right[0]) / 2
-        center_y = (top_left[1] + bottom_right[1]) / 2
-        center_x, center_y = int(center_x), int(center_y)
-
-        subprocess.run(["xdotool", "mousemove", "--sync", str(center_x), str(center_y)])
-        if clicks > 0:
-            print(f"xdotool click --repeat {clicks} 1")
-            subprocess.run(["xdotool", "click", "--repeat", str(clicks), "1"])
-
-    else:  # help
+    if num_args == 2 and sys.argv[1] in ("help", "h", "--help", "-help", "-h"):
         print(title + usage)
+        raise SystemExit
+
+    if num_args == 2 and sys.argv[1] == "--click":
+        clicks = 1
+    elif num_args == 2 and sys.argv[1] == "--double-click":
+        clicks = 2
+    else:
+        clicks = 0
+
+    screen = get_screen()
+
+    w = Overlay(display.Display())
+    w.draw_message("uniclick: scanning screen...")
+    w.display.sync()
+
+    word_boxes = ocr_screen(screen)
+
+    w.draw_message("uniclick: scanning screen...")  # undraw
+    w.draw(word_boxes, None)
+    w.display.sync()
+
+    filtered_boxes = word_boxes.copy()
+    selection = None
+    search_term = ""
+    found = False
+    while not found:
+        e = w.display.next_event()
+
+        if e.type == X.KeyRelease:
+            w.draw(filtered_boxes, selection)  # undraw current state
+
+            keysym = w.display.keycode_to_keysym(e.detail, 0)
+            string = XK.keysym_to_string(keysym)
+
+            if keysym == XK.XK_BackSpace and len(search_term) >= 1:
+                search_term = search_term[0:-1]
+
+            elif keysym == XK.XK_Escape:
+                raise SystemExit
+
+            elif string is not None and string in ALPHABET:
+                search_term += string
+
+            elif selection is not None and keysym == XK.XK_Return:
+                found = True
+
+            elif keysym == XK.XK_Tab:
+                if selection is not None:
+                    selection += 1
+
+            filtered_boxes = [
+                (word, box) for word, box in word_boxes
+                if clean_word(word).startswith(clean_word(search_term))
+            ]
+
+            num_boxes = len(filtered_boxes)
+            num_unique_words = len({clean_word(word) for word, box in filtered_boxes})
+
+            # enable <tab> selection once we have less than 5 results
+            if selection is None and num_unique_words <= 5:
+                selection = 0
+            elif selection is not None and num_unique_words > 5:
+                selection = None
+
+            # wrap the selection pointer
+            if selection is not None and selection >= num_boxes:
+                selection = 0
+
+            w.draw(filtered_boxes, selection)
+            w.display.sync()
+
+    w.window.unmap()
+    w.display.sync()
+
+    if len(filtered_boxes) < 1:
+        print("couldn't find requested box")
+        exit()
+
+    word, box = filtered_boxes[selection]
+    top_left, bottom_right = box
+
+    center_x = (top_left[0] + bottom_right[0]) / 2
+    center_y = (top_left[1] + bottom_right[1]) / 2
+    center_x, center_y = int(center_x), int(center_y)
+
+    subprocess.run(["xdotool", "mousemove", "--sync", str(center_x), str(center_y)])
+    if clicks > 0:
+        print(f"xdotool click --repeat {clicks} 1")
+        subprocess.run(["xdotool", "click", "--repeat", str(clicks), "1"])
