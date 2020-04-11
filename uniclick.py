@@ -72,6 +72,7 @@ lang = langs[0]
 def clean_word(word):
     return "".join(c for c in word.lower() if c in ALPHABET)
 
+
 def get_screen():
     subprocess.run(["scrot", "-q", "100", "--overwrite", SCREEN_PNG])
     screen = Image.open(SCREEN_PNG).convert("L")
@@ -116,35 +117,34 @@ class Overlay:
     def draw_message(self, msg):
         win_geo = self.window.get_geometry()._data
 
-        win_center_x = int(win_geo['x'] + win_geo['width']/2)
-        win_center_y = int(win_geo['y'] + win_geo['height']/2)
+        win_center_x = int(win_geo["x"] + win_geo["width"] / 2)
+        win_center_y = int(win_geo["y"] + win_geo["height"] / 2)
 
-        msg_width = len(msg)*6
+        msg_width = len(msg) * 6
         msg_height = 10
 
-        msg_x = int(win_center_x - msg_width/2)
-        msg_y = int(win_center_y - msg_height/2)
+        msg_x = int(win_center_x - msg_width / 2)
+        msg_y = int(win_center_y - msg_height / 2)
 
         border_x = 5
         border_y = 4
 
         self.window.fill_rectangle(
             self.gc,
-            msg_x-border_x,
-            msg_y-border_y,
-            msg_width+2*border_x,
-            msg_height+2*border_y,
+            msg_x - border_x,
+            msg_y - border_y,
+            msg_width + 2 * border_x,
+            msg_height + 2 * border_y,
         )
         self.window.draw_text(
-            self.gc,
-            msg_x,
-            msg_y+msg_height,
-            msg,
+            self.gc, msg_x, msg_y + msg_height, msg,
         )
 
     def draw(self, word_boxes, selection):
         if len(word_boxes) == 0:
-            self.draw_message("uniclick: Search term produced no results. Press Backspace to remove characters or Escape to quit.")
+            self.draw_message(
+                "uniclick: Search term produced no results. Press Backspace to remove characters or Escape to quit."
+            )
             return
 
         index = 0
@@ -221,7 +221,8 @@ if __name__ == "__main__":
                     selection += 1
 
             filtered_boxes = [
-                (word, box) for word, box in word_boxes
+                (word, box)
+                for word, box in word_boxes
                 if clean_word(word).startswith(clean_word(search_term))
             ]
 
