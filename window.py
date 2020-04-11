@@ -28,7 +28,8 @@ class Window:
         self.window.change_attributes(event_mask=X.ExposureMask)
         self.display.sync()
 
-    def draw(self, word_boxes):
+    def draw(self, word_boxes, selection):
+        index = 0
         for word, box in word_boxes:
             top_left, bottom_right = box
 
@@ -36,3 +37,8 @@ class Window:
             width, height = abs(top_left[0]-bottom_right[0]), abs(top_left[1]-bottom_right[1])
 
             self.window.fill_rectangle(self.gc, x-1, y-1, width+2, height+2)
+
+            if selection is not None and index == selection:
+                self.window.rectangle(self.gc, x-3, y-3, width+5, height+5)
+
+            index += 1

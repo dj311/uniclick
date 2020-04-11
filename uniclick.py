@@ -173,49 +173,68 @@ if __name__=="__main__":
         f.close()
 
         w = window.Window(window.display.Display())
-        w.draw(word_to_box.items())
+        w.draw(word_to_box.items(), None)
         w.display.sync()
 
+        filtered_boxes = word_to_box.copy()
+        selection = None
         search_term = ""
         found = False
         while not found:
             e = w.display.next_event()
 
             if e.type == X.KeyRelease:
-                w.draw(word_to_box.items())  # undraw current state
+                w.draw(filtered_boxes.items(), selection)  # undraw current state
 
                 keysym = w.display.keycode_to_keysym(e.detail, 0)
                 string = XK.keysym_to_string(keysym)
 
-                if keysym == XK.XK_BackSpace and len(search_term) > 1:
+                if keysym == XK.XK_BackSpace and len(search_term) >= 1:
                     search_term = search_term[0:-1]
 
                 elif keysym == XK.XK_Escape:
                     raise SystemExit
 
-                elif string in ALPHABET:
+                elif string is not None and string in ALPHABET:
                     search_term += string
 
                 elif keysym == XK.XK_Return:
                     found = True
 
-                word_to_box = {
+                elif keysym == XK.XK_Tab:
+                    if selection is not None:
+                        selection += 1
+
+                filtered_boxes = {
                     word: box for word, box in word_to_box.items()
                     if clean_word(word).startswith(clean_word(search_term))
                 }
 
-                w.draw(word_to_box.items())
+                num_boxes = len(filtered_boxes)
+
+                # enable <tab> selection once we have less than 5 results
+                if selection is None and num_boxes <= 5:
+                    selection = 0
+                elif selection is not None and num_boxes > 5:
+                    selection = None
+
+                # wrap the selection pointer
+                if selection is not None and selection >= num_boxes:
+                    selection = 0
+
+                w.draw(filtered_boxes.items(), selection)
                 w.display.sync()
 
         w.window.unmap()
         w.display.sync()
 
-        matches = list(word_to_box.values())
+        matches = list(filtered_boxes.values())
         if len(matches) < 1:
             print("couldn't find requested box")
             exit()
 
-        top_left, bottom_right = matches[0]
+        match = matches[selection]
+        top_left, bottom_right = match
 
         center_x = (top_left[0] + bottom_right[0])/2
         center_y = (top_left[1] + bottom_right[1])/2
