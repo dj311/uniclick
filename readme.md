@@ -5,7 +5,7 @@ screenshot of your desktop, runs optical character recognition (OCR)
 on it, then displays narrowing UI that allows you to select a word. Once
 your target word is selected, you cursor will be moved to its center.
 uniclick will click or double-click on request. It's similar in spirit to
-(keynav)[https://www.semicomplete.com/projects/keynav/]. Though using OCR
+[keynav](https://www.semicomplete.com/projects/keynav/). Though using OCR
 means uniclick is much less reliable.
 
 Here's a demo:
