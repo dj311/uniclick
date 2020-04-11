@@ -106,15 +106,15 @@ def ocr_screen():
         word_boxes = tool.image_to_string(
             screen, lang=lang, builder=pyocr.builders.WordBoxBuilder(),
         )
-        word_to_box = {word_box.content: word_box.position for word_box in word_boxes}
+        word_boxes = [(word_box.content, word_box.position) for word_box in word_boxes]
 
     else:
         print("screen hasn't changed")
         f = open(SCREEN_JSON, "r")
-        word_to_box = json.load(f)
+        word_boxes = json.load(f)
         f.close()
 
-    return word_to_box
+    return word_boxes
 
 
 class Overlay:
@@ -170,19 +170,19 @@ if __name__ == "__main__":
     if command == "update" and args == ["--daemon"]:
         with daemon.DaemonContext(pidfile=pidfile.TimeoutPIDLockFile(DAEMON_PID)):
             while True:
-                word_to_box = ocr_screen()
+                word_boxes = ocr_screen()
 
                 f = open(SCREEN_JSON, "w")
-                json.dump(word_to_box, f)
+                json.dump(word_boxes, f)
                 f.close()
 
                 time.sleep(3)
 
     elif command == "update" and args == []:
-        word_to_box = ocr_screen()
+        word_boxes = ocr_screen()
 
         f = open(SCREEN_JSON, "w")
-        json.dump(word_to_box, f)
+        json.dump(word_boxes, f)
         f.close()
 
         quit(0)
@@ -196,14 +196,14 @@ if __name__ == "__main__":
             clicks = 0
 
         f = open(SCREEN_JSON, "r")
-        word_to_box = json.load(f)
+        word_boxes = json.load(f)
         f.close()
 
         w = Overlay(display.Display())
-        w.draw(word_to_box.items(), None)
+        w.draw(word_boxes, None)
         w.display.sync()
 
-        filtered_boxes = word_to_box.copy()
+        filtered_boxes = word_boxes.copy()
         selection = None
         search_term = ""
         found = False
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             e = w.display.next_event()
 
             if e.type == X.KeyRelease:
-                w.draw(filtered_boxes.items(), selection)  # undraw current state
+                w.draw(filtered_boxes, selection)  # undraw current state
 
                 keysym = w.display.keycode_to_keysym(e.detail, 0)
                 string = XK.keysym_to_string(keysym)
@@ -232,37 +232,36 @@ if __name__ == "__main__":
                     if selection is not None:
                         selection += 1
 
-                filtered_boxes = {
-                    word: box
-                    for word, box in word_to_box.items()
+                filtered_boxes = [
+                    (word, box) for word, box in word_boxes
                     if clean_word(word).startswith(clean_word(search_term))
-                }
+                ]
 
                 num_boxes = len(filtered_boxes)
+                num_unique_words = len({word for word, box in filtered_boxes})
 
                 # enable <tab> selection once we have less than 5 results
-                if selection is None and num_boxes <= 5:
+                if selection is None and num_unique_words <= 5:
                     selection = 0
-                elif selection is not None and num_boxes > 5:
+                elif selection is not None and num_unique_words > 5:
                     selection = None
 
                 # wrap the selection pointer
                 if selection is not None and selection >= num_boxes:
                     selection = 0
 
-                w.draw(filtered_boxes.items(), selection)
+                w.draw(filtered_boxes, selection)
                 w.display.sync()
 
         w.window.unmap()
         w.display.sync()
 
-        matches = list(filtered_boxes.values())
-        if len(matches) < 1:
+        if len(filtered_boxes) < 1:
             print("couldn't find requested box")
             exit()
 
-        match = matches[selection]
-        top_left, bottom_right = match
+        word, box = filtered_boxes[selection]
+        top_left, bottom_right = box
 
         center_x = (top_left[0] + bottom_right[0]) / 2
         center_y = (top_left[1] + bottom_right[1]) / 2
