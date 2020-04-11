@@ -238,7 +238,7 @@ if __name__ == "__main__":
                 ]
 
                 num_boxes = len(filtered_boxes)
-                num_unique_words = len({word for word, box in filtered_boxes})
+                num_unique_words = len({clean_word(word) for word, box in filtered_boxes})
 
                 # enable <tab> selection once we have less than 5 results
                 if selection is None and num_unique_words <= 5:
