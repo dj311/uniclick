@@ -6,8 +6,6 @@ class Window:
         self.screen = self.display.screen()
         self.root = self.screen.root
         self.window = self.screen.root.composite_get_overlay_window()._data['overlay_window']
-        self.window.unmap()
-        self.display.sync()
 
         self.root.grab_keyboard(
             1,
@@ -27,8 +25,8 @@ class Window:
             subwindow_mode=X.IncludeInferiors,
         )
 
-        self.window.map()
         self.window.change_attributes(event_mask=X.ExposureMask)
+        self.display.sync()
 
     def draw(self, word_boxes):
         for word, box in word_boxes:
