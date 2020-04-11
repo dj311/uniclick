@@ -186,34 +186,6 @@ if __name__ == "__main__":
 
         quit(0)
 
-    elif command == "list":
-        f = open(SCREEN_JSON, "r")
-        word_to_box = json.load(f)
-        f.close()
-
-        for word, box in word_to_box.items():
-            print(word)
-
-        quit(0)
-
-    elif command == "goto":
-        f = open(SCREEN_JSON, "r")
-        word_to_box = json.load(f)
-        f.close()
-
-        [word] = args
-        box = word_to_box.get(word)
-        if box is None:
-            print("couldn't find requested box")
-
-        top_left, bottom_right = box
-
-        center_x = (top_left[0] + bottom_right[0]) / 2
-        center_y = (top_left[1] + bottom_right[1]) / 2
-        center_x, center_y = int(center_x), int(center_y)
-
-        os.system(f"xdotool mousemove --sync {center_x} {center_y}")
-
     elif command == "ui":
         if len(args) > 0 and args[0] == "--click":
             clicks = 1
