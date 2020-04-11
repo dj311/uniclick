@@ -4,7 +4,7 @@ Click on any text using just your keyboard. `uniclick` takes a
 screenshot of your desktop, runs optical character recognition (OCR)
 on it, then provides you with a narrowing UI select a word. Once
 complete, you cursor will be moved to the center of your selected
-word. It wlil also click and double-click on request.
+word. It will click or double-click on request.
 
 Here's a demo:
 
@@ -27,6 +27,7 @@ highlighted, it's probably because the `l` has been misread. Try pressing
 
 If you want to give up/cancel, press `<esc>` at any time.
 
+### Requirements
 It expects to be inside an x11 session with a compositor running. I've
 only tested this on Ubuntu 19.04 running i3 and compton.
 
@@ -38,6 +39,7 @@ System requirements:
 
 Python requirements are in requirements.txt.
 
+### Examples
 Example setups for i3:
   1. Scan screen then use overlay ui for picking (zenity is used for a
      progress indicator, but thats optional).
