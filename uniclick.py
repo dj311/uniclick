@@ -67,9 +67,8 @@ import pyocr
 import pyocr.builders
 import sys
 import time
-import window
 
-from Xlib import X, XK
+from Xlib import X, XK, display
 from PIL import Image, ImageEnhance
 from daemon import pidfile
 
@@ -113,6 +112,50 @@ def ocr_screen():
         f.close()
 
     return word_to_box
+
+
+class Overlay:
+    def __init__(self, display):
+        self.display = display
+        self.screen = self.display.screen()
+        self.root = self.screen.root
+        self.window = self.screen.root.composite_get_overlay_window()._data['overlay_window']
+
+        self.root.grab_keyboard(
+            1,
+            X.GrabModeAsync,
+            X.GrabModeAsync,
+            X.CurrentTime,
+        )
+
+        colormap = self.screen.default_colormap
+        self.color = colormap.alloc_color(0, 0, 0)
+        self.xor_color = self.color.pixel ^ 0xffffff
+
+        self.gc = self.window.create_gc(
+            foreground=self.xor_color,
+            graphics_exposures=False,
+            function=X.GXxor,
+            subwindow_mode=X.IncludeInferiors,
+        )
+
+        self.window.change_attributes(event_mask=X.ExposureMask)
+        self.display.sync()
+
+    def draw(self, word_boxes, selection):
+        index = 0
+        for word, box in word_boxes:
+            top_left, bottom_right = box
+
+            x, y = top_left
+            width, height = abs(top_left[0]-bottom_right[0]), abs(top_left[1]-bottom_right[1])
+
+            self.window.fill_rectangle(self.gc, x-1, y-1, width+2, height+2)
+
+            if selection is not None and index == selection:
+                self.window.rectangle(self.gc, x-3, y-3, width+5, height+5)
+
+            index += 1
 
 
 if __name__=="__main__":
@@ -181,7 +224,7 @@ if __name__=="__main__":
         word_to_box = json.load(f)
         f.close()
 
-        w = window.Window(window.display.Display())
+        w = Overlay(display.Display())
         w.draw(word_to_box.items(), None)
         w.display.sync()
 
