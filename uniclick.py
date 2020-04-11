@@ -14,38 +14,48 @@ commands:
                    useful.
            list :: output a list of all words on screen.
     goto <word> :: move the mouse to <word> on screen.
-             ui :: list and goto word via an overlay ui.
+             ui :: list and goto word via an overlay ui. results are narrowed
+                   by typing letters (narrowing is case insensitive and only
+                   considers 'qwertyuiopasdfghjklzxcvbnm1234567890'.
+                   - <tab> cycles between results when you have 5 or less.
+                     unfortunately the cycling order is a little stochastic.
+                   - <backspace> untypes letters (as you'd expect).
+                   - <enter> completes the search.
+                   the default action is to move the mouse. the argument --click
+                   will click after moving and --double-click will click twice.
            help :: show this message.
 
-requirements:
+system requirements:
   - tesseract
   - xdotool
   - scrot
   - python3
-  - pyocr
-  - pillow
-  - python-daemon
 
-examples:
+python requirements are in requirements.txt.
+
+example setups for i3:
+
   1. scan then use overlay ui for picking
-     .config/i3/config:
         bindsym $mod+c exec uniclick update \
-                | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
-                && uniclick ui
+            | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
+            && uniclick ui
+
   2. configure i3 to scan then search when $mod+m is pressed:
-     .config/i3/config:
          bindsym $mod+m exec uniclick update \
             | zenity --progress --text "uniclick loading..." --auto-close --auto-kill --pulsate \
             && uniclick goto "$(uniclick list | rofi -dmenu -p 'uniclick' -i)"
 
   3. constantly scan screen in background then search cached version on demand:
-     .xsession:
-         uniclick update --daemon &&
-     .config/i3/config:
-         bindsym $mod+m exec uniclick update --daemon; uniclick goto "$(uniclick list | rofi -dmenu -p 'uniclick' -i)"
+         bindsym $mod+m exec uniclick update --daemon \
+            && uniclick goto "$(uniclick list | rofi -dmenu -p 'uniclick' -i)"
 
-the tradeoff is that 1 is /slow/ to use while 2 feels snappier but is
-wasteful and will slow your computer down.
+there are tradeoffs between the different options:
+  - running `uniclick update` as a daemon means that it's be responsive, but you'll waste a lot compute
+and there's a high likelihood of the cached data being out of date.
+  - running `uniclick update` on demand shouldn't ever give out of
+    date results, but will be slow (approx 5 secs on my machine).
+  - the overlay ui is considerably better, but can be buggy.
+
 
 """
 __doc__ = title + usage
@@ -152,10 +162,9 @@ if __name__=="__main__":
 
         center_x = (top_left[0] + bottom_right[0])/2
         center_y = (top_left[1] + bottom_right[1])/2
+        center_x, center_y = int(center_x), int(center_y)
 
-        print("going to", center_x, center_y)
-
-        os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
+        os.system(f"xdotool mousemove --sync {center_x} {center_y}")
 
     elif command in ("help", "-h", "h", "--help", "-help"):
         print(title + usage)
@@ -238,12 +247,10 @@ if __name__=="__main__":
 
         center_x = (top_left[0] + bottom_right[0])/2
         center_y = (top_left[1] + bottom_right[1])/2
+        center_x, center_y = int(center_x), int(center_y)
 
-        print("going to", center_x, center_y)
-
-        os.system("xdotool mousemove --sync " + str(int(center_x)) + " " + str(int(center_y)))
+        os.system(f"xdotool mousemove --sync {center_x} {center_y}")
         if clicks > 0:
             print(f"xdotool click --repeat {clicks} 1")
             os.system(f"xdotool click --repeat {clicks} 1")
-
 
