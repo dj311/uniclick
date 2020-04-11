@@ -2,13 +2,30 @@
 
 Click on any text using just your keyboard. `uniclick` takes a
 screenshot of your desktop, runs optical character recognition (OCR)
-on it, then provides you with a narrowing ui select a word. Once
+on it, then provides you with a narrowing UI select a word. Once
 complete, you cursor will be moved to the center of your selected
 word. It wlil also click and double-click on request.
 
 Here's a demo:
 
 ![uniclick demo](./demo.gif)
+
+The UI works by overlaying dark boxes over each word the OCR engine has
+detected. You build up a search string by typing letters or numbers (all
+other characters are ignored). As you do so, uniclick will only highlight
+words that start with your search string. Pressing `<backspace>` will
+delete the last character you typed. Once there are less than 5 words
+highlighted, you can also press `<tab>` to cycle between them. The selected
+word is surrounded by an extra border. Once you have selected the word
+you want, type `<enter>` to finish. The cursor will be moved to the center
+of that word.
+
+I don't think this is an intended use case of tesseract, so the OCR does get
+quite a few errors. If you've typed `unicl` and the word `uniclick` stops being
+highlighted, it's probably because the `l` has been misread. Try pressing
+`<backspace>` then `1` and seeing if it stays highlighted. 
+
+If you want to give up/cancel, press `<esc>` at any time.
 
 It expects to be inside an x11 session with a compositor running. I've
 only tested this on Ubuntu 19.04 running i3 and compton.
