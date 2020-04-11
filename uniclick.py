@@ -244,7 +244,7 @@ if __name__ == "__main__":
                 elif string is not None and string in ALPHABET:
                     search_term += string
 
-                elif keysym == XK.XK_Return:
+                elif selection is not None and keysym == XK.XK_Return:
                     found = True
 
                 elif keysym == XK.XK_Tab:
