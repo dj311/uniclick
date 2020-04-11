@@ -31,6 +31,8 @@ system requirements:
   - scrot
   - python3
 
+it expects to be inside an x11 session with a compositor running (tested with compton).
+
 python requirements are in requirements.txt.
 
 example setups for i3:
@@ -77,8 +79,10 @@ tool = tools[0]
 langs = tool.get_available_languages()
 lang = langs[0]
 
+
 def clean_word(word):
-    return ''.join(c for c in word.lower() if c in ALPHABET)
+    return "".join(c for c in word.lower() if c in ALPHABET)
+
 
 def ocr_screen():
     os.system(f"scrot -q 100 --overwrite {SCREEN_PNG}.new.png")
@@ -87,13 +91,11 @@ def ocr_screen():
     if screen_changed:
         os.system(f"mv {SCREEN_PNG}.new.png {SCREEN_PNG}")
 
-        screen = Image.open(SCREEN_PNG).convert('L')
+        screen = Image.open(SCREEN_PNG).convert("L")
         screen = ImageEnhance.Contrast(screen).enhance(1.5)
 
         word_boxes = tool.image_to_string(
-            screen,
-            lang=lang,
-            builder=pyocr.builders.WordBoxBuilder(),
+            screen, lang=lang, builder=pyocr.builders.WordBoxBuilder(),
         )
         word_to_box = {word_box.content: word_box.position for word_box in word_boxes}
 
@@ -111,18 +113,15 @@ class Overlay:
         self.display = display
         self.screen = self.display.screen()
         self.root = self.screen.root
-        self.window = self.screen.root.composite_get_overlay_window()._data['overlay_window']
+        self.window = self.root.composite_get_overlay_window()._data["overlay_window"]
 
         self.root.grab_keyboard(
-            1,
-            X.GrabModeAsync,
-            X.GrabModeAsync,
-            X.CurrentTime,
+            1, X.GrabModeAsync, X.GrabModeAsync, X.CurrentTime,
         )
 
         colormap = self.screen.default_colormap
         self.color = colormap.alloc_color(0, 0, 0)
-        self.xor_color = self.color.pixel ^ 0xffffff
+        self.xor_color = self.color.pixel ^ 0xFFFFFF
 
         self.gc = self.window.create_gc(
             foreground=self.xor_color,
@@ -140,20 +139,23 @@ class Overlay:
             top_left, bottom_right = box
 
             x, y = top_left
-            width, height = abs(top_left[0]-bottom_right[0]), abs(top_left[1]-bottom_right[1])
+            width, height = (
+                abs(top_left[0] - bottom_right[0]),
+                abs(top_left[1] - bottom_right[1]),
+            )
 
-            self.window.fill_rectangle(self.gc, x-1, y-1, width+2, height+2)
+            self.window.fill_rectangle(self.gc, x - 1, y - 1, width + 2, height + 2)
 
             if selection is not None and index == selection:
-                self.window.rectangle(self.gc, x-3, y-3, width+5, height+5)
+                self.window.rectangle(self.gc, x - 3, y - 3, width + 5, height + 5)
 
             index += 1
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     command, *args = sys.argv[1:]
 
-    if command == 'update' and args == ["--daemon"]:
+    if command == "update" and args == ["--daemon"]:
         with daemon.DaemonContext(pidfile=pidfile.TimeoutPIDLockFile(DAEMON_PID)):
             while True:
                 word_to_box = ocr_screen()
@@ -164,7 +166,7 @@ if __name__=="__main__":
 
                 time.sleep(3)
 
-    elif command == 'update' and args == []:
+    elif command == "update" and args == []:
         word_to_box = ocr_screen()
 
         f = open(SCREEN_JSON, "w")
@@ -173,7 +175,7 @@ if __name__=="__main__":
 
         quit(0)
 
-    elif command == 'list':
+    elif command == "list":
         f = open(SCREEN_JSON, "r")
         word_to_box = json.load(f)
         f.close()
@@ -195,8 +197,8 @@ if __name__=="__main__":
 
         top_left, bottom_right = box
 
-        center_x = (top_left[0] + bottom_right[0])/2
-        center_y = (top_left[1] + bottom_right[1])/2
+        center_x = (top_left[0] + bottom_right[0]) / 2
+        center_y = (top_left[1] + bottom_right[1]) / 2
         center_x, center_y = int(center_x), int(center_y)
 
         os.system(f"xdotool mousemove --sync {center_x} {center_y}")
@@ -250,7 +252,8 @@ if __name__=="__main__":
                         selection += 1
 
                 filtered_boxes = {
-                    word: box for word, box in word_to_box.items()
+                    word: box
+                    for word, box in word_to_box.items()
                     if clean_word(word).startswith(clean_word(search_term))
                 }
 
@@ -280,12 +283,11 @@ if __name__=="__main__":
         match = matches[selection]
         top_left, bottom_right = match
 
-        center_x = (top_left[0] + bottom_right[0])/2
-        center_y = (top_left[1] + bottom_right[1])/2
+        center_x = (top_left[0] + bottom_right[0]) / 2
+        center_y = (top_left[1] + bottom_right[1]) / 2
         center_x, center_y = int(center_x), int(center_y)
 
         os.system(f"xdotool mousemove --sync {center_x} {center_y}")
         if clicks > 0:
             print(f"xdotool click --repeat {clicks} 1")
             os.system(f"xdotool click --repeat {clicks} 1")
-
