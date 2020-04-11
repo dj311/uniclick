@@ -142,7 +142,27 @@ class Overlay:
         self.window.change_attributes(event_mask=X.ExposureMask)
         self.display.sync()
 
+
+    def draw_no_results_msg(self):
+        geo = self.window.get_geometry()._data
+        center_x, center_y = int(geo['x'] + geo['width']/2), int(geo['y'] + geo['height']/2)
+
+        width, height = 600, 18
+        msg_x, msg_y = int(center_x - width/2), int(center_y - height/2)
+
+        self.window.fill_rectangle(self.gc, msg_x, msg_y, width, height)
+        self.window.draw_text(
+            self.gc,
+            msg_x + 5,
+            msg_y + 13,
+            "uniclick: Search term produced no results. Press Backspace to remove characters or Escape to quit."
+        )
+
     def draw(self, word_boxes, selection):
+        if len(word_boxes) == 0:
+            self.draw_loading_msg()
+            return
+
         index = 0
         for word, box in word_boxes:
             top_left, bottom_right = box
