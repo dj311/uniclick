@@ -1,9 +1,9 @@
 title = """
-                                  _        __ _        __
-                   __  __ ____   (_)_____ / /(_)_____ / /__
-                  / / / // __ \ / // ___// // // ___// //_/
-                 / /_/ // / / // // /__ / // // /__ / ,<
-                 \__,_//_/ /_//_/ \___//_//_/ \___//_/|_|
+                              _        __ _        __
+               __  __ ____   (_)_____ / /(_)_____ / /__
+              / / / // __ \ / // ___// // // ___// //_/
+             / /_/ // / / // // /__ / // // /__ / ,<
+             \__,_//_/ /_//_/ \___//_//_/ \___//_/|_|
 
 """
 usage = """
@@ -154,7 +154,10 @@ class Overlay:
 
 
 if __name__ == "__main__":
-    command, *args = sys.argv[1:]
+    if len(sys.argv) <= 1:
+        command, *args = "help", []
+    else:
+        command, *args = sys.argv[1:]
 
     if command == "update" and args == ["--daemon"]:
         with daemon.DaemonContext(pidfile=pidfile.TimeoutPIDLockFile(DAEMON_PID)):
@@ -203,9 +206,6 @@ if __name__ == "__main__":
         center_x, center_y = int(center_x), int(center_y)
 
         os.system(f"xdotool mousemove --sync {center_x} {center_y}")
-
-    elif command in ("help", "-h", "h", "--help", "-help"):
-        print(title + usage)
 
     elif command == "ui":
         if len(args) > 0 and args[0] == "--click":
@@ -292,3 +292,6 @@ if __name__ == "__main__":
         if clicks > 0:
             print(f"xdotool click --repeat {clicks} 1")
             os.system(f"xdotool click --repeat {clicks} 1")
+
+    else:  # help
+        print(title + usage)
