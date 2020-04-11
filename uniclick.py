@@ -87,12 +87,13 @@ def clean_word(word):
 def ocr_screen():
     os.system(f"scrot -q 100 --overwrite {SCREEN_PNG}.new.png")
 
-    screen_changed = True  # TODO: do an image diff here
+    old_screen = Image.open(SCREEN_PNG).convert("L")
+    new_screen = Image.open(SCREEN_PNG + ".new.png").convert("L")
+    screen_changed = old_screen.tobytes() != new_screen.tobytes()
+
     if screen_changed:
         os.system(f"mv {SCREEN_PNG}.new.png {SCREEN_PNG}")
-
-        screen = Image.open(SCREEN_PNG).convert("L")
-        screen = ImageEnhance.Contrast(screen).enhance(1.5)
+        screen = ImageEnhance.Contrast(new_screen).enhance(1.5)
 
         word_boxes = tool.image_to_string(
             screen, lang=lang, builder=pyocr.builders.WordBoxBuilder(),
