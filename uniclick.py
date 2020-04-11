@@ -68,6 +68,7 @@ import pyocr
 import pyocr.builders
 import sys
 import time
+import subprocess
 
 from Xlib import X, XK, display
 from PIL import Image, ImageEnhance
@@ -92,14 +93,14 @@ def clean_word(word):
 
 
 def ocr_screen():
-    os.system(f"scrot -q 100 --overwrite {SCREEN_PNG}.new.png")
+    subprocess.run(["scrot", "-q", "100", "--overwrite", f"{SCREEN_PNG}.new.png"])
 
     old_screen = Image.open(SCREEN_PNG).convert("L")
     new_screen = Image.open(SCREEN_PNG + ".new.png").convert("L")
     screen_changed = old_screen.tobytes() != new_screen.tobytes()
 
     if screen_changed:
-        os.system(f"mv {SCREEN_PNG}.new.png {SCREEN_PNG}")
+        subprocess.run(["mv", f"{SCREEN_PNG}.new.png", SCREEN_PNG])
         screen = ImageEnhance.Contrast(new_screen).enhance(1.5)
 
         word_boxes = tool.image_to_string(
@@ -267,10 +268,10 @@ if __name__ == "__main__":
         center_y = (top_left[1] + bottom_right[1]) / 2
         center_x, center_y = int(center_x), int(center_y)
 
-        os.system(f"xdotool mousemove --sync {center_x} {center_y}")
+        subprocess.run(["xdotool", "mousemove", "--sync", str(center_x), str(center_y)])
         if clicks > 0:
             print(f"xdotool click --repeat {clicks} 1")
-            os.system(f"xdotool click --repeat {clicks} 1")
+            subprocess.run(["xdotool", "click", "--repeat", str(clicks), "1"])
 
     else:  # help
         print(title + usage)
