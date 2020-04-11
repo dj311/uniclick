@@ -2,9 +2,9 @@
 
 Click on any text using just your keyboard. `uniclick` takes a
 screenshot of your desktop, runs optical character recognition (OCR)
-on it, then provides you with a narrowing UI select a word. Once
-complete, you cursor will be moved to the center of your selected
-word. It will click or double-click on request.
+on it, then displays narrowing UI that allows you to select a word. Once
+your target word is selected, you cursor will be moved to its center.
+uniclick will click or double-click on request.
 
 Here's a demo:
 
@@ -12,20 +12,24 @@ Here's a demo:
 
 The UI works by overlaying dark boxes over each word the OCR engine has
 detected. You build up a search string by typing letters or numbers (all
-other characters are ignored). As you do so, uniclick will only highlight
-words that start with your search string. Pressing `<backspace>` will
-delete the last character you typed. Once there are less than 5 words
-highlighted, you can also press `<tab>` to cycle between them. The selected
-word is surrounded by an extra border. Once you have selected the word
-you want, type `<enter>` to finish. The cursor will be moved to the center
-of that word.
-
-I don't think this is an intended use case of tesseract, so the OCR does get
-quite a few errors. If you've typed `unicl` and the word `uniclick` stops being
-highlighted, it's probably because the `l` has been misread. Try pressing
-`<backspace>` then `1` and seeing if it stays highlighted. 
+other characters are ignored). As you type, uniclick will narrow the words
+it highlights to just those that start with your search string. Pressing
+`<backspace>` will delete the last character you typed. Once there are less
+than 5 words highlighted, you can also press `<tab>` to cycle between them.
+The selected word is surrounded by an extra border. Once you have selected
+the word you want, type `<enter>` to finish. The cursor will be moved to
+the center of that word.
 
 If you want to give up/cancel, press `<esc>` at any time.
+
+OCR is quite hard, so there will be errors. If you've typed `unicl` and
+the word `uniclick` stops being highlighted, it's probably because the `l`
+has been misread. Try pressing `<backspace>` then `1` and seeing if it
+stays highlighted.
+
+If you discover an OCR engine which works particuarly well for this use case,
+please [let me know](https://daniel.wilshirejones.com/contact.html).
+
 
 ### Requirements
 It expects to be inside an x11 session with a compositor running. I've
@@ -66,7 +70,7 @@ There are tradeoffs between these options:
     my machine).
 
 
-Credits:
+### Credits:
   - [This gist](https://gist.github.com/initbrain/6628609) was vital for me getting the overlay
     window to work.
   - [This stack overflow answer](https://stackoverflow.com/questions/14200512#14269915) pointed me towards using
